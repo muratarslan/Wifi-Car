@@ -1,0 +1,173 @@
+#include <Servo.h> 
+Servo twist;
+Servo nod;
+ 
+int EN1 = 6;  
+int EN2 = 5;  
+int IN1 = 7;
+int IN2 = 4; 
+ 
+// horn
+int horn = 3; 
+int hornLevel;
+ 
+//Variable to store servor possition
+int horizontal;
+int vertical;
+ 
+ 
+ 
+void setup() 
+{ 
+  for(int i=3;i<=7;i++) 
+    pinMode(i, OUTPUT);  //set pin 3,4,5,6,7 to output mode, including the horn
+ 
+  // Servo SetUp
+  horizontal = 90;
+  vertical = 90;
+  twist.attach(8);  // initialize servo motors for the neck of the camera
+  nod.attach(9); 
+  delay(10);
+ 
+  // Start servos Centered when Wifi-Car is turned ON
+  nod.write(horizontal);
+  twist.write(horizontal);              // tell servo to go to centered possition
+  delay(15);        
+ 
+  hornLevel = 100;
+  Serial.begin(115200);   
+} 
+ 
+ 
+void loop() 
+{ 
+  char val;
+  while(1)
+  {
+    val = Serial.read();
+    if(val!=-1)
+    {
+      switch(val)   // here are all the commands i will be sending from the usb connection
+      {
+      case 'w'://Move ahead
+        Motor1(250,true); 
+        Motor2(250,true);
+        delay(50); 
+        Motor1(0,false);
+        Motor2(0,false);
+        break;
+      case 'x'://move back
+        Motor1(250,false);
+        Motor2(250,false);
+        delay(50);
+        Motor1(0,false);
+        Motor2(0,false);
+        break;
+      case 'd'://turn left
+        Motor1(250,false);
+        Motor2(250,true);
+        delay(50);
+        Motor1(0,false);
+        Motor2(0,false);
+        break;       
+      case 'a'://turn right
+        Motor1(250,true);
+        Motor2(250,false);
+        delay(50);
+        Motor1(0,false);
+        Motor2(0,false);
+        break;   
+      case 's'://stop
+        Motor1(0,false);
+        Motor2(0,false);
+        break;
+        // Move the neck, control servos, horizontal and vertical
+      case 'e':
+        if (horizontal < 1) {
+          horizontal = 0;
+          break;
+        }
+        else {
+        horizontal--;
+        Serial.print("Servo twist (horizontal) possition: ");
+        Serial.println(horizontal);
+        twist.write(horizontal);
+        break;
+        }
+      case 'q':// for the neck of the camera
+        if (horizontal > 179) {
+          horizontal = 179;
+          break;
+        }
+        else {
+        horizontal++;
+        Serial.print("Servo twist (horizontal) possition: ");
+        Serial.println(horizontal);
+        twist.write(horizontal);
+        break;
+        }
+      case 'f':// for the neck of the camera     
+        if (vertical > 127) {
+          vertical = 127;
+          break;
+        }
+        else {
+        vertical++;
+        Serial.print("Servo nod (vertical) possition: ");
+        Serial.println(vertical);
+        nod.write(vertical);
+        break;
+        }
+      case 'r':// for the neck of the camera
+        if (vertical < 32) {
+          vertical = 32;
+          break;
+        }
+        else {
+        vertical--;
+        Serial.print("Servo nod (vertical) possition: ");
+        Serial.println(vertical);
+        nod.write(vertical);
+        break;
+        }
+      case 't':// center camera point of view
+        vertical = 90;
+        horizontal = 90;
+        Serial.println("Centering neck .. ");
+        nod.write(vertical);
+        twist.write(horizontal);
+        break;
+      case 'h':
+        //horn, like in the movie. Wifi-Car can also talk! 
+        //if you have some sensors, you can use this function to let him complain. 
+        //dont forget to attach the pitch library!
+ 
+        digitalWrite(horn,HIGH);
+        Serial.println("Beep Beep");
+        if (hornLevel < 100) 
+        {
+          for(int i=1;i<=20;i++)  tone(3, random(31, 4978), 200);
+        }
+        hornLevel = 90;
+        Serial.println("Beep Beep");
+        break;
+ 
+      } 
+    }
+  }                           
+}
+ 
+// Basic motor functions
+void Motor1(int pwm, boolean reverse)
+{
+  analogWrite(EN1,pwm); //set pwm control, 0 for stop, and 255 for maximum speed
+  if(reverse) digitalWrite(IN1,HIGH);  
+  else digitalWrite(IN1,LOW); 
+}  
+ 
+void Motor2(int pwm, boolean reverse)
+{
+  analogWrite(EN2,pwm);
+  if(reverse) digitalWrite(IN2,HIGH);
+  else digitalWrite(IN2,LOW);    
+}
